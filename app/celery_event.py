@@ -6,8 +6,6 @@ celery_app = Celery(
     backend="redis://localhost:6379/1",
 )
 
-# celery_app.autodiscover_tasks(["app.tasks"])
-
 celery_app.conf.update(
     timezone="UTC",
     enable_utc=True,

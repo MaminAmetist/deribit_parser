@@ -1,5 +1,6 @@
-from pydantic import BaseModel
 from datetime import datetime
+
+from pydantic import BaseModel
 
 
 class PriceRead(BaseModel):
@@ -9,4 +10,4 @@ class PriceRead(BaseModel):
     timestamp: datetime
 
     class Config:
-        from_attributes = True  # Позволяет Pydantic читать данные прямо из объектов SQLAlchemy
+        from_attributes = True
