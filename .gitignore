@@ -4,3 +4,4 @@ venv
 celerybeat-schedule.dat
 celerybeat-schedule.bak
 celerybeat-schedule.dir
+.coveragerc
