@@ -1,115 +1,119 @@
 from datetime import datetime, date
 
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import CurrencyTicker
 from app.core.db_depends import get_async_db
 from app.models.price import Price
-from app.shemas.price import PriceRead
 
 router = APIRouter(prefix="/prices", tags=["Prices"])
 
 
-@router.get("/", response_model=list[PriceRead])
-async def get_prices(
-        ticker: CurrencyTicker = Query(..., description="Тикер валюты"),
-        session: AsyncSession = Depends(get_async_db),
-):
+class PriceController:
     """
-    Получение всех сохранённых данных по валюте.
-    """
-    stmt = (
-        select(Price)
-        .where(Price.ticker == ticker.value)
-        .order_by(Price.timestamp)
-    )
-
-    result = await session.execute(stmt)
-    prices = result.scalars().all()
-
-    return prices
-
-
-@router.get("/latest", response_model=PriceRead)
-async def get_latest_price(
-        ticker: CurrencyTicker = Query(..., description="Тикер валюты"),
-        session: AsyncSession = Depends(get_async_db),
-):
-    """
-    Получение последней цены валюты.
-    """
-    stmt = (
-        select(Price)
-        .where(Price.ticker == ticker.value)
-        .order_by(Price.timestamp.desc())
-        .limit(1)
-    )
-
-    result = await session.execute(stmt)
-    price = result.scalar_one_or_none()
-
-    return price
-
-
-@router.get("/by_date", response_model=list[PriceRead])
-async def get_prices_by_date(
-        ticker: CurrencyTicker = Query(..., description="Тикер валюты"),
-        from_date: date | None = Query(
-            None,
-            description="Дата начала (YYYY-MM-DD)",
-        ),
-        to_date: date | None = Query(
-            None,
-            description="Дата окончания (YYYY-MM-DD)",
-        ),
-        session: AsyncSession = Depends(get_async_db),
-):
-    """
-    Получение цен по тикеру за диапазон дат.
+    Controller for price-related endpoints.
     """
 
-    validate_date_range(from_date, to_date)
-    validate_not_future(from_date)
-    validate_not_future(to_date)
+    def __init__(self, session: AsyncSession):
+        self._session = session
 
-    stmt = select(Price).where(Price.ticker == ticker.value)
+    @staticmethod
+    def _validate_date_range(
+            from_date: date | None,
+            to_date: date | None,
+    ) -> None:
+        """
+        Validate date range consistency.
+        """
+        if from_date and to_date and from_date > to_date:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="from_date cannot be greater than to_date",
+            )
 
-    if from_date is not None:
-        from_ts = int(datetime.combine(from_date, datetime.min.time()).timestamp())
-        stmt = stmt.where(Price.timestamp >= from_ts)
+    @staticmethod
+    def _validate_not_future(d: date | None) -> None:
+        """
+        Prevent future dates.
+        """
+        if d and d > date.today():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Date cannot be in the future",
+            )
 
-    if to_date is not None:
-        to_ts = int(datetime.combine(to_date, datetime.max.time()).timestamp())
-        stmt = stmt.where(Price.timestamp <= to_ts)
-
-    stmt = stmt.order_by(Price.timestamp)
-
-    result = await session.execute(stmt)
-    return result.scalars().all()
-
-
-def validate_date_range(
-        from_date: date | None,
-        to_date: date | None,
-) -> None:
-    """
-    Проверка согласованности диапазона дат.
-    """
-    if from_date and to_date and from_date > to_date:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="from_date cannot be greater than to_date",
+    async def get_prices(
+            self,
+            ticker: CurrencyTicker,
+    ) -> list[Price]:
+        """
+        Get all stored prices for a ticker.
+        """
+        stmt = (
+            select(Price)
+            .where(Price.ticker == ticker.value)
+            .order_by(Price.timestamp)
         )
 
+        result = await self._session.execute(stmt)
+        return result.scalars().all()
 
-def validate_not_future(d: date) -> None:
-    """
-    Проверка на будущие даты.
-    """
-    if d > date.today():
-        raise HTTPException(
-            status_code=400,
-            detail="Date cannot be in the future",
+    async def get_latest_price(
+            self,
+            ticker: CurrencyTicker,
+    ) -> Price | None:
+        """
+        Get latest price for a ticker.
+        """
+        stmt = (
+            select(Price)
+            .where(Price.ticker == ticker.value)
+            .order_by(Price.timestamp.desc())
+            .limit(1)
         )
+
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_prices_by_date(
+            self,
+            ticker: CurrencyTicker,
+            from_date: date | None,
+            to_date: date | None,
+    ) -> list[Price]:
+        """
+        Get prices for a ticker within a date range.
+        """
+        self._validate_date_range(from_date, to_date)
+        self._validate_not_future(from_date)
+        self._validate_not_future(to_date)
+
+        stmt = select(Price).where(Price.ticker == ticker.value)
+
+        if from_date:
+            from_ts = int(
+                datetime.combine(from_date, datetime.min.time()).timestamp()
+            )
+            stmt = stmt.where(Price.timestamp >= from_ts)
+
+        if to_date:
+            to_ts = int(
+                datetime.combine(to_date, datetime.max.time()).timestamp()
+            )
+            stmt = stmt.where(Price.timestamp <= to_ts)
+
+        stmt = stmt.order_by(Price.timestamp)
+
+        result = await self._session.execute(stmt)
+        return result.scalars().all()
+
+
+def get_price_controller(
+        session: AsyncSession = Depends(get_async_db),
+) -> PriceController:
+    """
+    Dependency factory for PriceController.
+    """
+    return PriceController(session)
