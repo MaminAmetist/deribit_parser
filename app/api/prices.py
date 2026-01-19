@@ -95,7 +95,7 @@ def validate_date_range(
         to_date: date | None,
 ) -> None:
     """
-    Validate date range consistency.
+    Проверка согласованности диапазона дат.
     """
     if from_date and to_date and from_date > to_date:
         raise HTTPException(
@@ -106,7 +106,7 @@ def validate_date_range(
 
 def validate_not_future(d: date) -> None:
     """
-    Prevent future dates.
+    Проверка на будущие даты.
     """
     if d > date.today():
         raise HTTPException(
