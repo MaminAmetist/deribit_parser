@@ -1,6 +1,6 @@
 from datetime import datetime, date
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -70,6 +70,10 @@ async def get_prices_by_date(
     Получение цен по тикеру за диапазон дат.
     """
 
+    validate_date_range(from_date, to_date)
+    validate_not_future(from_date)
+    validate_not_future(to_date)
+
     stmt = select(Price).where(Price.ticker == ticker.value)
 
     if from_date is not None:
@@ -84,3 +88,28 @@ async def get_prices_by_date(
 
     result = await session.execute(stmt)
     return result.scalars().all()
+
+
+def validate_date_range(
+        from_date: date | None,
+        to_date: date | None,
+) -> None:
+    """
+    Validate date range consistency.
+    """
+    if from_date and to_date and from_date > to_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="from_date cannot be greater than to_date",
+        )
+
+
+def validate_not_future(d: date) -> None:
+    """
+    Prevent future dates.
+    """
+    if d > date.today():
+        raise HTTPException(
+            status_code=400,
+            detail="Date cannot be in the future",
+        )
