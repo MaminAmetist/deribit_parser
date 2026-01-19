@@ -5,10 +5,12 @@ services:
     image: postgres:16
     container_name: deribit_db
     restart: always
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: fetch_db
-      POSTGRES_USER: ecommerce_user
-      POSTGRES_PASSWORD: ecom_pass
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -17,6 +19,7 @@ services:
   app:
     build: .
     container_name: deribit_app
+    restart: always
     depends_on:
       - db
     env_file:
