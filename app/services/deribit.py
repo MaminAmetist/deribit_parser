@@ -1,8 +1,12 @@
+import time
 from decimal import Decimal
+from typing import Iterable
 
 import aiohttp
 
 from app import CurrencyTicker
+from app.core.database import async_session_maker
+from app.models.price import Price
 
 DERIBIT_URL = "https://www.deribit.com/api/v2/public/get_index_price"
 
@@ -10,6 +14,14 @@ SUPPORTED_INDEXES = {
     ticker.value: f"{ticker.value.lower()}_usd"
     for ticker in CurrencyTicker
 }
+
+
+class DeribitAPIError(Exception):
+    """Base Deribit API error."""
+
+
+class DeribitResponseError(DeribitAPIError):
+    """Unexpected response format."""
 
 
 async def fetch_index_price(
@@ -31,18 +43,12 @@ async def fetch_index_price(
         resp.raise_for_status()
         payload = await resp.json()
 
-    if "result" not in payload or "index_price" not in payload["result"]:
-        raise RuntimeError(f"Unexpected Deribit response: {payload}")
+    if "result" not in payload:
+        raise DeribitResponseError(
+            f"Invalid response: {payload}"
+        )
 
     return Decimal(str(payload["result"]["index_price"]))
-
-
-import aiohttp
-import time
-from typing import Iterable
-
-from app.core.database import async_session_maker
-from app.models.price import Price
 
 
 async def save_prices(tickers: Iterable[str]) -> None:
