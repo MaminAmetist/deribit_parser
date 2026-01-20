@@ -25,11 +25,18 @@ async def get_latest_price(
     return await controller.get_latest_price(ticker)
 
 
-@router.get("/by_date", response_model=list[PriceRead])
 async def get_prices_by_date(
-        ticker: CurrencyTicker = Query(...),
-        from_date: date | None = Query(None),
-        to_date: date | None = Query(None),
+        ticker: CurrencyTicker = Query(..., description="Тикер валюты"),
+        from_date: date | None = Query(
+            None,
+            description="Дата начала в формате YYYY-MM-DD",
+            example="2026-01-01",
+        ),
+        to_date: date | None = Query(
+            None,
+            description="Дата окончания в формате YYYY-MM-DD",
+            example="2026-01-31",
+        ),
         controller: PriceController = Depends(get_price_controller),
 ):
     return await controller.get_prices_by_date(
