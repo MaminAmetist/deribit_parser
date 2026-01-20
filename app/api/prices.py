@@ -1,14 +1,12 @@
 from datetime import datetime, date
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import HTTPException, status, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import CurrencyTicker
 from app.core.db_depends import get_async_db
 from app.models.price import Price
-
-router = APIRouter(prefix="/prices", tags=["Prices"])
 
 
 class PriceController:
