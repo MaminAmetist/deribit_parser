@@ -10,13 +10,9 @@ from app.core.database import Base
 load_dotenv()
 
 config = context.config
-DB_USER = os.getenv('DB_USER')
-DB_PASS = os.getenv('DB_PASS')
-DB_NAME = os.getenv('DB_NAME')
-DB_HOST = os.getenv('DB_HOST')
-DB_PORT = os.getenv('DB_PORT')
 
-DATABASE_URL = f'postgresql+psycopg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+DATABASE_URL = (f'postgresql+psycopg://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:'
+                f'{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}')
 
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
 

@@ -1,14 +1,16 @@
+import os
 import time
 from decimal import Decimal
 from typing import Iterable
 
 import aiohttp
+from dotenv import load_dotenv
 
 from app import CurrencyTicker
 from app.core.database import async_session_maker
 from app.models.price import Price
 
-DERIBIT_URL = "https://www.deribit.com/api/v2/public/get_index_price"
+load_dotenv()
 
 SUPPORTED_INDEXES = {
     ticker.value: f"{ticker.value.lower()}_usd"
@@ -36,7 +38,7 @@ async def fetch_index_price(
     params = {"index_name": index_name}
 
     async with session.get(
-            DERIBIT_URL,
+            os.getenv("DERIBIT_URL"),
             params=params,
             timeout=aiohttp.ClientTimeout(total=10),
     ) as resp:

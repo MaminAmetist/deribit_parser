@@ -21,8 +21,6 @@ Celery лучшее решение для периодических задач,
 
 Используется асинхронный asyncpg для сервера приложений, sync драйвер psycopg для Alembic.
 
-Разделение слоёв улучшает читаемость, поддержку и тестируемость.
-
 
 ## Структура
 
@@ -44,10 +42,10 @@ Celery лучшее решение для периодических задач,
 │   ├── services/
 │   │   └── deribit.py          # клиент биржи (aiohttp)
 │   └── tasks/
-│       └── celery_event.py     # Celery task
+│       └── fetch_prices.py     # Celery task
 ├── tests/                      # блок тестирования
 ├── alembic/                    # миграции
-├── celery_worker.py
+├── celery_event.py
 ├── docker-compose.yml
 ├── Dockerfile
 ├── requirements.txt
@@ -59,7 +57,7 @@ Celery лучшее решение для периодических задач,
 ## Установка и запуск (локально)
 1. Клонирование
 ```bach
-git clone https://github.com/MaminAmetist/deribit_parser.git
+git clone https://gitlab.com/MaminAmetist/deribit_parser
 cd deribit_parser
 ```
 
@@ -81,9 +79,12 @@ pip install -r requirements.txt
 Создай .env в корне проекта:
 
 ```bash
-DATABASE_URL — асинхронный URL PostgreSQL
-
-DATABASE_URL_SYNC — sync URL (для Alembic)
+DB_USER=your_postgresql_user
+DB_PASS=your_postgresql_pass
+DB_NAME=your_db_name
+DB_HOST=localhost
+DB_PORT=5432
+DERIBIT_URL=https://www.deribit.com/api/v2/public/get_index_price
 ```
 
 ## Миграции

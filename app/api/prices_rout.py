@@ -14,6 +14,9 @@ async def get_prices(
         ticker: CurrencyTicker = Query(...),
         controller: PriceController = Depends(get_price_controller),
 ):
+    """
+    Get all prices.
+    """
     return await controller.get_prices(ticker)
 
 
@@ -22,6 +25,9 @@ async def get_latest_price(
         ticker: CurrencyTicker = Query(...),
         controller: PriceController = Depends(get_price_controller),
 ):
+    """
+    Get latest price.
+    """
     return await controller.get_latest_price(ticker)
 
 
@@ -39,6 +45,9 @@ async def get_prices_by_date(
         ),
         controller: PriceController = Depends(get_price_controller),
 ):
+    """
+    Get prices by date.
+    """
     return await controller.get_prices_by_date(
         ticker=ticker,
         from_date=from_date,
